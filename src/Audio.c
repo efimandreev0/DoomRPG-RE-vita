@@ -1,8 +1,8 @@
 #include <SDL.h>
+#include <fluidsynth/fluidsynth.h>
 
 #include "soloud_c.h"
 #include "soloud_c_ext.h"
-#include "fluidsynth/fluidsynth.h"
 #include "DoomRPG.h"
 #include "Audio.h"
 

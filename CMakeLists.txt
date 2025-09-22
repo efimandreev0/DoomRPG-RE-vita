@@ -34,6 +34,19 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME}
   SDL2::SDL2
   ZLIB::ZLIB
+  vitaGL
+  vitashark
+  SceShaccCg_stub
+  SceShaccCgExt
+  taihen_stub
+  SceGxm_stub
+  SceDisplay_stub
+  SceCtrl_stub
+  SceAudio_stub
+  SceCommonDialog_stub
+  m
+  c
+  pthread
   fluidsynth
   soloud
   pthread

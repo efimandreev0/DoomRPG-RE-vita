@@ -5,6 +5,10 @@
 
 #include "DoomRPG.h"
 #include "EntityDef.h"
+
+#include <psp2/apputil.h>
+#include <psp2/system_param.h>
+
 #include "SDL_Video.h"
 
 EntityDefManager_t* EntityDef_init(EntityDefManager_t* entityDef, DoomRPG_t* doomRpg)
@@ -61,8 +65,16 @@ int EntityDef_startup(EntityDefManager_t* entityDef)
 	byte *fData;
 	EntityDef_t* list;
 	int dataPos, i;
-
-	fData = DoomRPG_fileOpenRead(entityDef->doomRpg, "/entities.db");
+	int lang = -1;
+	sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG, &lang);
+	switch (lang) {
+		case SCE_SYSTEM_PARAM_LANG_RUSSIAN:
+			fData = DoomRPG_fileOpenRead(entityDef->doomRpg, "/entities_ru.db");
+			break;
+		default:
+			fData = DoomRPG_fileOpenRead(entityDef->doomRpg, "/entities.db");
+			break;
+	}
 
 	dataPos = 0;
 	entityDef->numDefs = DoomRPG_shortAtNext(fData, &dataPos);

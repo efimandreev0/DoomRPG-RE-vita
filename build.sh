@@ -18,5 +18,5 @@ while getopts 'rh' flag; do
 done
 
 rm -rf build/*
-cmake -S . -B build -DCMAKE_BUILD_TYPE=$build_type
+cmake -S . -B build -DCMAKE_BUILD_TYPE=$build_type -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build build

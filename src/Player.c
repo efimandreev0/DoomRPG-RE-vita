@@ -7,6 +7,10 @@
 #include "DoomCanvas.h"
 #include "Game.h"
 #include "Player.h"
+
+#include <psp2/apputil.h>
+#include <psp2/system_param.h>
+
 #include "Hud.h"
 #include "Entity.h"
 #include "EntityDef.h"
@@ -82,7 +86,16 @@ void Player_addArmor(Player_t* player, int i)
 		CombatEntity_setArmor(ce, armmor + i);
 	}
 	if (CombatEntity_getArmor(ce) > armmor) {
-		SDL_snprintf(msg, sizeof(msg), "Gained %d armor", (CombatEntity_getArmor(ce) - armmor));
+		int lang = -1;
+		sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG, &lang);
+		switch (lang) {
+			case SCE_SYSTEM_PARAM_LANG_RUSSIAN:
+				SDL_snprintf(msg, sizeof(msg), "Получено %d брони", (CombatEntity_getArmor(ce) - armmor));
+				break;
+			default:
+				SDL_snprintf(msg, sizeof(msg), "Gained %d armor", (CombatEntity_getArmor(ce) - armmor));
+				break;
+		}
 		Hud_addMessage(player->doomRpg->hud, msg);
 	}
 }
@@ -115,7 +128,17 @@ void Player_addHealth(Player_t* player, int i)
 		CombatEntity_setHealth(ce, health + i);
 	}
 	if (CombatEntity_getHealth(ce) > health) {
-		SDL_snprintf(msg, sizeof(msg), "Gained %d health", (CombatEntity_getHealth(ce) - health));
+		int lang = -1;
+		sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG, &lang);
+		switch (lang) {
+			case SCE_SYSTEM_PARAM_LANG_RUSSIAN:
+				SDL_snprintf(msg, sizeof(msg), "Получено %d здоровья", (CombatEntity_getHealth(ce) - health));
+				break;
+			default:
+				SDL_snprintf(msg, sizeof(msg), "Gained %d health", (CombatEntity_getHealth(ce) - health));
+				break;
+		}
+
 		Hud_addMessage(player->doomRpg->hud, msg);
 	}
 }
@@ -150,76 +173,152 @@ void Player_nextLevel(Player_t* player)
 	{ 
 		Sound_playSound(player->doomRpg->sound, 5043, SND_FLG_LOOP | SND_FLG_STOPSOUNDS | SND_FLG_ISMUSIC, 6);
 	}
+	int lang = -1;
+	sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG, &lang);
+	switch (lang) {
+		case SCE_SYSTEM_PARAM_LANG_RUSSIAN:
+			strncpy(text, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Уровень повышен!"), sizeof(text));
+			strncat(text, "|", sizeof(text));
+			SDL_snprintf(msg, sizeof(msg), "Уровень: %d|", player->level);
+			strncat(text, msg, sizeof(text));
 
-	strncpy(text, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Level up!"), sizeof(text));
-	strncat(text, "|", sizeof(text));
-	SDL_snprintf(msg, sizeof(msg), "Level: %d|", player->level);
-	strncat(text, msg, sizeof(text));
+			int nextInt = 3 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 3);
+			int b = CombatEntity_getMaxHealth(ce);
+			if (b + nextInt > 99) {
+				nextInt = 99 - b;
+			}
+			if (nextInt != 0) {
+				CombatEntity_setMaxHealth(ce, b + nextInt);
+				SDL_snprintf(msg, sizeof(msg), "Макс. здоровье: +%d|", nextInt);
+				strncat(text, msg, sizeof(text));
+			}
+			CombatEntity_setHealth(ce, b + nextInt);
 
-	int nextInt = 3 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 3);
-	int b = CombatEntity_getMaxHealth(ce);
-	if (b + nextInt > 99) {
-		nextInt = 99 - b;
-	}
-	if (nextInt != 0) {
-		CombatEntity_setMaxHealth(ce, b + nextInt);
-		SDL_snprintf(msg, sizeof(msg), "Max Health: +%d|", nextInt);
-		strncat(text, msg, sizeof(text));
-	}
-	CombatEntity_setHealth(ce, b + nextInt);
+			int nextInt2 = 3 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 3);
+			int d = CombatEntity_getMaxArmor(ce);
+			if (d + nextInt2 > 99) {
+				nextInt2 = 99 - d;
+			}
+			if (nextInt2 != 0) {
+				CombatEntity_setMaxArmor(ce, d + nextInt2);
+				SDL_snprintf(msg, sizeof(msg), "Макс. броня: +%d|", nextInt2);
+				strncat(text, msg, sizeof(text));
+			}
 
-	int nextInt2 = 3 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 3);
-	int d = CombatEntity_getMaxArmor(ce);
-	if (d + nextInt2 > 99) {
-		nextInt2 = 99 - d;
-	}
-	if (nextInt2 != 0) {
-		CombatEntity_setMaxArmor(ce, d + nextInt2);
-		SDL_snprintf(msg, sizeof(msg), "Max Armor: +%d|", nextInt2);
-		strncat(text, msg, sizeof(text));
-	}
+			int nextInt3 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getDefense(ce) + nextInt3 > 99) {
+				nextInt3 = 99 - CombatEntity_getDefense(ce);
+			}
+			if (nextInt3 != 0) {
+				CombatEntity_setDefense(ce, CombatEntity_getDefense(ce) + nextInt3);
+				SDL_snprintf(msg, sizeof(msg), "Защита: +%d|", nextInt3);
+				strncat(text, msg, sizeof(text));
+			}
 
-	int nextInt3 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
-	if (CombatEntity_getDefense(ce) + nextInt3 > 99) {
-		nextInt3 = 99 - CombatEntity_getDefense(ce);
-	}
-	if (nextInt3 != 0) {
-		CombatEntity_setDefense(ce, CombatEntity_getDefense(ce) + nextInt3);
-		SDL_snprintf(msg, sizeof(msg), "Defense: +%d|", nextInt3);
-		strncat(text, msg, sizeof(text));
-	}
+			int nextInt4 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getStrength(ce) + nextInt4 > 99) {
+				nextInt4 = 99 - CombatEntity_getStrength(ce);
+			}
+			if (nextInt4 != 0) {
+				CombatEntity_setStrength(ce, CombatEntity_getStrength(ce) + nextInt4);
+				SDL_snprintf(msg, sizeof(msg), "Сила: +%d|", nextInt4);
+				strncat(text, msg, sizeof(text));
+			}
 
-	int nextInt4 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
-	if (CombatEntity_getStrength(ce) + nextInt4 > 99) {
-		nextInt4 = 99 - CombatEntity_getStrength(ce);
-	}
-	if (nextInt4 != 0) {
-		CombatEntity_setStrength(ce, CombatEntity_getStrength(ce) + nextInt4);
-		SDL_snprintf(msg, sizeof(msg), "Strength: +%d|", nextInt4);
-		strncat(text, msg, sizeof(text));
-	}
+			int nextInt5 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getAgility(ce) + nextInt5 > 99) {
+				nextInt5 = 99 - CombatEntity_getAgility(ce);
+			}
+			if (nextInt5 != 0) {
+				CombatEntity_setAgility(ce, CombatEntity_getAgility(ce) + nextInt5);
+				SDL_snprintf(msg, sizeof(msg), "Ловкость: +%d|", nextInt5);
+				strncat(text, msg, sizeof(text));
+			}
 
-	int nextInt5 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
-	if (CombatEntity_getAgility(ce) + nextInt5 > 99) {
-		nextInt5 = 99 - CombatEntity_getAgility(ce);
-	}
-	if (nextInt5 != 0) {
-		CombatEntity_setAgility(ce, CombatEntity_getAgility(ce) + nextInt5);
-		SDL_snprintf(msg, sizeof(msg), "Agility: +%d|", nextInt5);
-		strncat(text, msg, sizeof(text));
-	}
+			int nextInt6 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getAccuracy(ce) + nextInt6 > 99) {
+				nextInt6 = 99 - CombatEntity_getAccuracy(ce);
+			}
+			if (nextInt6 != 0) {
+				CombatEntity_setAccuracy(ce, CombatEntity_getAccuracy(ce) + nextInt6);
+				SDL_snprintf(msg, sizeof(msg), "Меткость: +%d|", nextInt5);
+				strncat(text, msg, sizeof(text));
+			}
 
-	int nextInt6 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
-	if (CombatEntity_getAccuracy(ce) + nextInt6 > 99) {
-		nextInt6 = 99 - CombatEntity_getAccuracy(ce);
-	}
-	if (nextInt6 != 0) {
-		CombatEntity_setAccuracy(ce, CombatEntity_getAccuracy(ce) + nextInt6);
-		SDL_snprintf(msg, sizeof(msg), "Accuracy: +%d|", nextInt5);
-		strncat(text, msg, sizeof(text));
-	}
+			strncat(text, "|Здоровье восста-|новлено.", sizeof(text));
+			break;
+		default:
+			strncpy(text, MenuSystem_buildDivider(player->doomRpg->menuSystem, "Level up!"), sizeof(text));
+			strncat(text, "|", sizeof(text));
+			SDL_snprintf(msg, sizeof(msg), "Level: %d|", player->level);
+			strncat(text, msg, sizeof(text));
 
-	strncat(text, "|Health restored.", sizeof(text));
+			int nextInt10 = 3 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 3);
+			int b2 = CombatEntity_getMaxHealth(ce);
+			if (b2 + nextInt10 > 99) {
+				nextInt10 = 99 - b2;
+			}
+			if (nextInt10 != 0) {
+				CombatEntity_setMaxHealth(ce, b2 + nextInt10);
+				SDL_snprintf(msg, sizeof(msg), "Max Health: +%d|", nextInt10);
+				strncat(text, msg, sizeof(text));
+			}
+			CombatEntity_setHealth(ce, b2 + nextInt10);
+
+			int nextInt210 = 3 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 3);
+			int d2 = CombatEntity_getMaxArmor(ce);
+			if (d2 + nextInt210 > 99) {
+				nextInt210 = 99 - d2;
+			}
+			if (nextInt210 != 0) {
+				CombatEntity_setMaxArmor(ce, d2 + nextInt210);
+				SDL_snprintf(msg, sizeof(msg), "Max Armor: +%d|", nextInt210);
+				strncat(text, msg, sizeof(text));
+			}
+
+			int nextInt310 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getDefense(ce) + nextInt310 > 99) {
+				nextInt310 = 99 - CombatEntity_getDefense(ce);
+			}
+			if (nextInt310 != 0) {
+				CombatEntity_setDefense(ce, CombatEntity_getDefense(ce) + nextInt310);
+				SDL_snprintf(msg, sizeof(msg), "Defense: +%d|", nextInt310);
+				strncat(text, msg, sizeof(text));
+			}
+
+			int nextInt410 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getStrength(ce) + nextInt410 > 99) {
+				nextInt410 = 99 - CombatEntity_getStrength(ce);
+			}
+			if (nextInt410 != 0) {
+				CombatEntity_setStrength(ce, CombatEntity_getStrength(ce) + nextInt410);
+				SDL_snprintf(msg, sizeof(msg), "Strength: +%d|", nextInt410);
+				strncat(text, msg, sizeof(text));
+			}
+
+			int nextInt510 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getAgility(ce) + nextInt510 > 99) {
+				nextInt510 = 99 - CombatEntity_getAgility(ce);
+			}
+			if (nextInt510 != 0) {
+				CombatEntity_setAgility(ce, CombatEntity_getAgility(ce) + nextInt510);
+				SDL_snprintf(msg, sizeof(msg), "Agility: +%d|", nextInt510);
+				strncat(text, msg, sizeof(text));
+			}
+
+			int nextInt610 = 1 + ((DoomRPG_randNextInt(&player->doomRpg->random) & 255) % 2);
+			if (CombatEntity_getAccuracy(ce) + nextInt610 > 99) {
+				nextInt610 = 99 - CombatEntity_getAccuracy(ce);
+			}
+			if (nextInt610 != 0) {
+				CombatEntity_setAccuracy(ce, CombatEntity_getAccuracy(ce) + nextInt610);
+				SDL_snprintf(msg, sizeof(msg), "Accuracy: +%d|", nextInt510);
+				strncat(text, msg, sizeof(text));
+			}
+
+			strncat(text, "|Health restored.", sizeof(text));
+			break;
+	}
 	if (player->doomRpg->doomCanvas->state != ST_MENU) {
 		player->doomRpg->game->tileEvent = 0;
 		DoomCanvas_startDialog(player->doomRpg->doomCanvas, text, false);
@@ -229,8 +328,16 @@ void Player_nextLevel(Player_t* player)
 void Player_addXP(Player_t* player, int xp)
 {
 	char text[64];
-
-	SDL_snprintf(text, sizeof(text), "Gained %d XP!", xp);
+	int lang = -1;
+	sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG, &lang);
+	switch (lang) {
+		case SCE_SYSTEM_PARAM_LANG_RUSSIAN:
+			SDL_snprintf(text, sizeof(text), "Получено %d опыта!", xp);
+			break;
+		default:
+			SDL_snprintf(text, sizeof(text), "Gained %d XP!", xp);
+			break;
+	}
 	Hud_addMessage(player->doomRpg->hud, text);
 	player->currentXP += xp;
 	player->xpGained += xp;

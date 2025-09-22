@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <string.h>
+#include <vitasdk.h>
 
 #include "DoomRPG.h"
 #include "DoomCanvas.h"
@@ -231,19 +232,42 @@ void Hud_drawBottomBar(Hud_t* hud)
     }
 
     // draw orientation text
-    switch (doomCanvas->destAngle & 255) {
-    case 0:
-        strncpy(dir, "E", sizeof(dir));
-        break;
-    case 128:
-        strncpy(dir, "W", sizeof(dir));
-        break;
-    case 192:
-        strncpy(dir, "S", sizeof(dir));
-        break;
-    default:
-        strncpy(dir, "N", sizeof(dir));
-        break;
+    int lang = -1;
+    sceAppUtilSystemParamGetInt(SCE_SYSTEM_PARAM_ID_LANG, &lang);
+    switch (lang) {
+        case SCE_SYSTEM_PARAM_LANG_RUSSIAN:
+            switch (doomCanvas->destAngle & 255) {
+            case 0:
+                    strncpy(dir, "В", sizeof(dir));
+                    break;
+            case 128:
+                    strncpy(dir, "З", sizeof(dir));
+                    break;
+            case 192:
+                    strncpy(dir, "Ю", sizeof(dir));
+                    break;
+            default:
+                    strncpy(dir, "С", sizeof(dir));
+                    break;
+            }
+            break;
+        default:
+            switch (doomCanvas->destAngle & 255) {
+            case 0:
+                    strncpy(dir, "E", sizeof(dir));
+                    break;
+            case 128:
+                    strncpy(dir, "W", sizeof(dir));
+                    break;
+            case 192:
+                    strncpy(dir, "S", sizeof(dir));
+                    break;
+            default:
+                    strncpy(dir, "N", sizeof(dir));
+                    break;
+            }
+
+            break;
     }
 
     DoomCanvas_drawImage(doomCanvas, &hud->imgStatusArrow, hud->statusOrientationArrowXpos + cx, y - 3, 9);

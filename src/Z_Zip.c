@@ -133,8 +133,154 @@ void closeZipFile(zip_file_t* zipFile)
 		SDL_RWclose(zipFile->file);
 	}
 }
-
 unsigned char* readZipFileEntry(const char* name, zip_file_t* zipFile, int* sizep)
+{
+#ifndef __aarch64__
+	(void)zipFile;
+	struct dirent* ent;
+
+	//dir = opendir("/switch/DoomRPG");
+	const char* base_path = "ux0:data/DoomRPG/";
+	char full_path[128];
+	snprintf(full_path, sizeof(full_path), "%s%s", base_path, name);
+	//logger_write("Patched to %s", full_path);
+	if (sizep != NULL) {
+		*sizep = 0;
+	}
+
+	SDL_RWops* rw = SDL_RWFromFile(full_path, "rb");
+	if (rw == NULL) {
+		//logger_write("Cannot open file!", full_path);
+		return NULL;
+	}
+
+	int current_pos = SDL_RWtell(rw);
+
+	Sint64 file_size = SDL_RWseek(rw, 0, SEEK_END);
+
+	SDL_RWseek(rw, current_pos, SEEK_SET);
+	if (file_size < 0) {
+		SDL_RWclose(rw);
+		return NULL;
+	}
+
+	unsigned char* buffer = (unsigned char*)SDL_malloc(file_size);
+	if (buffer == NULL) {
+		SDL_RWclose(rw);
+		return NULL;
+	}
+
+	size_t bytes_read = SDL_RWread(rw, buffer, 1, file_size);
+	if (bytes_read != (size_t)file_size) {
+		SDL_free(buffer);
+		SDL_RWclose(rw);
+		return NULL;
+	}
+
+	SDL_RWclose(rw);
+
+	if (sizep != NULL) {
+		*sizep = (int)file_size;
+	}
+	//logger_write("Opened file: %s", full_path);
+	return buffer;
+#else
+	zip_entry_t* entry = NULL;
+	int i, sig, general, method, namelength, extralength;
+	byte* cdata;
+	int code;
+
+	for (i = 0; i < zipFile->entry_count; i++)
+	{
+		zip_entry_t* entryTmp = zipFile->entry + i;
+
+		if (!SDL_strcasecmp(name, entryTmp->name)) {
+			entry = zipFile->entry + i;
+			break;
+		}
+	}
+
+	if (entry == NULL) {
+		DoomRPG_Error("did not find the %s file in the zip file", name);
+	}
+
+	SDL_RWseek(zipFile->file, entry->offset, SEEK_SET);
+
+	sig = File_readLong(zipFile->file);
+	if (sig != ZIP_LOCAL_FILE_SIG) {
+		DoomRPG_Error("wrong zip local file signature (0x%x)", sig);
+	}
+
+	File_readShort(zipFile->file); // version
+	general = File_readShort(zipFile->file); // general
+	if (general & ZIP_ENCRYPTED_FLAG) {
+		DoomRPG_Error("zipfile content is encrypted");
+	}
+
+	method = File_readShort(zipFile->file);
+	File_readShort(zipFile->file); // file time
+	File_readShort(zipFile->file); // file date
+	File_readLong(zipFile->file); // crc-32
+	File_readLong(zipFile->file); // csize
+	File_readLong(zipFile->file); // usize
+	namelength = File_readShort(zipFile->file);
+	extralength = File_readShort(zipFile->file);
+
+	SDL_RWseek(zipFile->file, namelength + extralength, SEEK_CUR);
+
+	cdata = SDL_malloc(entry->csize);
+	SDL_RWread(zipFile->file, cdata, sizeof(byte), entry->csize);
+
+	if (method == 0)
+	{
+		*sizep = entry->usize;
+		return cdata;
+	}
+	else if (method == 8)
+	{
+		byte* udata = SDL_malloc(entry->usize);
+		z_stream stream;
+
+		SDL_memset(&stream, 0, sizeof stream);
+		stream.zalloc = zip_alloc;
+		stream.zfree = zip_free;
+		stream.opaque = Z_NULL;
+		stream.next_in = cdata;
+		stream.avail_in = entry->csize;
+		stream.next_out = udata;
+		stream.avail_out = entry->usize;
+
+		code = inflateInit2(&stream, -15);
+		if (code != Z_OK) {
+			DoomRPG_Error("zlib inflateInit2 error: %s", stream.msg);
+		}
+
+		code = inflate(&stream, Z_FINISH);
+		if (code != Z_STREAM_END) {
+			inflateEnd(&stream);
+			DoomRPG_Error("zlib inflate error: %s", stream.msg);
+		}
+
+		code = inflateEnd(&stream);
+		if (code != Z_OK) {
+			inflateEnd(&stream);
+			DoomRPG_Error("zlib inflateEnd error: %s", stream.msg);
+		}
+
+		SDL_free(cdata);
+
+		*sizep = entry->usize;
+		return udata;
+	}
+	else {
+		DoomRPG_Error("unknown zip method: %d", method);
+	}
+
+	return NULL;
+#endif
+}
+
+unsigned char* readZipFileEntry_old(const char* name, zip_file_t* zipFile, int* sizep)
 {
 	zip_entry_t* entry = NULL;
 	int i, sig, general, method, namelength, extralength;
