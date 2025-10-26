@@ -8,6 +8,8 @@
 #include "Game.h"
 #include "SDL_Video.h"
 
+#include <SDL_mixer.h>
+
 SDLVideo_t sdlVideo;
 SDLController_t sdlController;
 
@@ -126,7 +128,14 @@ void SDL_InitVideo(void)
 		}
 	}
 }
+void SDL_InitAudio(void)
+{
+	printf("SDL_InitAudio\n");
 
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+		DoomRPG_Error("Could not initialize SDL Mixer: %s", Mix_GetError());
+	}
+}
 void SDL_Close(void)
 {
 	printf("SDL_Close\n");

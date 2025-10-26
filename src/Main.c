@@ -10,7 +10,7 @@
 #include "Hud.h"
 #include "MenuSystem.h"
 #include "SDL_Video.h"
-#include "Audio.h"
+#include "Sound.h"
 #include "Z_Zip.h"
 
 extern DoomRPG_t* doomRpg;
@@ -23,9 +23,9 @@ int main(int argc, char* args[])
 
 	Z_Init();
 	SDL_InitVideo();
-	Audio_init();
+	SDL_InitAudio();
 
-	openZipFile(DATAPATH "DoomRPG.zip", &zipFile);
+	//openZipFile(DATAPATH "DoomRPG.zip", &zipFile);
 
 	/*int size;
 	byte* data;
@@ -153,7 +153,7 @@ int main(int argc, char* args[])
 						SDL_Log("Window %d closed", ev.window.windowID);
 						closeZipFile(&zipFile);
 						DoomRPG_FreeAppData(doomRpg);
-						Audio_close();
+		//				Audio_close();
 						SDL_Close();
 						exit(0);
 						break;
@@ -207,7 +207,7 @@ int main(int argc, char* args[])
 
 	closeZipFile(&zipFile);
 	DoomRPG_FreeAppData(doomRpg);
-	Audio_close();
+	//Audio_close();
 	SDL_Close();
 
 	return 0;

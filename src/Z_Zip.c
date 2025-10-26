@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <zlib.h>
+#include <vitasdk.h>
 
 #include "DoomRPG.h"
 #include "Z_Zip.h"
@@ -136,6 +137,42 @@ void closeZipFile(zip_file_t* zipFile)
 
 unsigned char* readZipFileEntry(const char* name, zip_file_t* zipFile, int* sizep)
 {
+#ifdef __VITA__
+	const char* base_path = "ux0:data/DoomRPG/";
+	char full_path[128];
+	snprintf(full_path, sizeof(full_path), "%s%s", base_path, name);
+	//logger_write("Patched to %s", full_path);
+	if (sizep != NULL) {
+		*sizep = 0;
+	}
+	SceIoStat s;
+
+	SceUID rw = sceIoOpen(full_path, SCE_O_RDONLY, 0777);
+	sceIoGetstatByFd(rw, &s);
+	Sint64 file_size = s.st_size;
+
+	if (file_size < 0) {
+		sceIoClose(rw);
+		return NULL;
+	}
+
+	void* buffer = (void*)malloc(file_size);
+	if (buffer == NULL) {
+		sceIoClose(rw);
+		return NULL;
+	}
+
+
+	sceIoRead(rw, buffer, file_size);
+
+	sceIoClose(rw);
+
+	if (sizep != NULL) {
+		*sizep = (int)file_size;
+	}
+	//logger_write("Opened file: %s", full_path);
+	return buffer;
+#else
 	zip_entry_t* entry = NULL;
 	int i, sig, general, method, namelength, extralength;
 	byte* cdata;
@@ -228,4 +265,5 @@ unsigned char* readZipFileEntry(const char* name, zip_file_t* zipFile, int* size
 	}
 
 	return NULL;
+#endif
 }

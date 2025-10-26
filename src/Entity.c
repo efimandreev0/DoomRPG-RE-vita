@@ -269,7 +269,7 @@ void Entity_died(Entity_t* entity)
                 gSprite->flags |= 4;
                 gSprite->sprite->renderMode = 7;
                 Game_remove(game, entity);
-                Hud_addMessage(entity->doomRpg->hud, "Fire cleared!");
+                Hud_addMessage(entity->doomRpg->hud, entity->doomRpg->sysStrings[STRING_FIRECLEARED]); //STRING_FIRECLEARED
                 Player_addXP(entity->doomRpg->player, 2);
                 break;
 
@@ -284,7 +284,7 @@ void Entity_died(Entity_t* entity)
                         rnd = DoomRPG_randNextByte(&doomRpg->random);
                         if (rnd < 2) {
                             Game_gsprite_allocAnim(game, 1, sprite->x, sprite->y);
-                            Hud_addMessage(entity->doomRpg->hud, "Trapped!");
+                            Hud_addMessage(entity->doomRpg->hud, entity->doomRpg->sysStrings[STRING_TRAPPED]); //STRING_TRAPPED
                             break;
                         }
                         else {
@@ -314,7 +314,7 @@ void Entity_died(Entity_t* entity)
                         }
 
                     case 3: // Jammed Door / Weak Wall
-                        Hud_addMessage(doomRpg->hud, "Door cleared!");
+                        Hud_addMessage(doomRpg->hud, doomRpg->sysStrings[STRING_DOORCLEARED]); //STRING_DOORCLEARED
                         Player_addXP(entity->doomRpg->player, 1);
                         break;
 
@@ -576,9 +576,9 @@ int Entity_aiMoveToGoal(Entity_t* entity)
     int i = (entity->def->eSubType == 4 || entity->def->eSubType == 13) ? 3 : 1;
 
     boolean z = entity->def->eSubType == 5 || entity->def->eSubType == 4 || entity->def->eSubType == 1 || entity->def->eSubType == 13;
- 
+
     int i2 = ((sprite->x - doomCanvas->viewX) * (sprite->x - doomCanvas->viewX)) + ((sprite->y - doomCanvas->viewY) * (sprite->y - doomCanvas->viewY));
- 
+
     entity->monster->frameTime++;
     if (entity->monster->frameTime < i) {
         if ((sprite->x == doomCanvas->viewX || sprite->y == doomCanvas->viewY) && i2 <= 4096) {
@@ -880,180 +880,182 @@ void Entity_touched(Entity_t* entity)
     sound = 5060;
 
     switch (entity->def->eType)
-    {
-        case 3: {
-            switch (entity->def->eSubType)
             {
-                case 22:
-                case 23: {
-                    if (!Player_addCredits(player, entity->def->parm)) {
-                        Hud_addMessage(hud, "Credits at maximum");
+                case 3: {
+                    switch (entity->def->eSubType)
+                    {
+                        case 22:
+                        case 23: {
+                            if (!Player_addCredits(player, entity->def->parm)) {
+                                Hud_addMessage(hud, entity->doomRpg->sysStrings[STRING_MAXCREDITS]); //STRING_MAXCREDITS
+                                return;
+                            }
+                            Player_updateDamageFaceTime(player);
+                            break;
+                        }
+
+                        case 21: {
+                            if (CombatEntity_getArmor(&player->ce) >= CombatEntity_getMaxArmor(&player->ce)) {
+                                Hud_addMessage(hud,
+                                    entity->doomRpg->sysStrings[STRING_ARMORATMAX]); //STRING_ARMORATMAX
+                                return;
+                            }
+                            Player_addArmor(player, entity->def->parm);
+                            break;
+                        }
+
+                        case 20: {
+                            if (CombatEntity_getHealth(&player->ce) >= CombatEntity_getMaxHealth(&player->ce)) {
+                                Hud_addMessage(hud, entity->doomRpg->sysStrings[STRING_HEALTHATMAX]); //STRING_HEALTHATMAX
+                                return;
+                            }
+                            Player_addHealth(player, entity->def->parm);
+                            break;
+                        }
+
+                        case 24: {
+                            player->keys |= 1 << entity->def->parm;
+                            Player_updateDamageFaceTime(player);
+                            break;
+                        }
+                    }
+
+                    Sound_playSound(entity->doomRpg->sound, sound, 0, 2);
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, entity->doomRpg->sysStrings[STRING_GOT], entity->def->name); //STRING_GOT
+                    Hud_finishMessageBuffer(hud);
+                    Game_remove(entity->doomRpg->game, entity);
+                    break;
+                }
+
+                case 4: {
+                    if (!Player_addItem(player, entity->def->eSubType, 1)) {
+                        msg = Hud_getMessageBuffer(hud);
+                        SDL_snprintf(msg, MS_PER_CHAR, entity->doomRpg->sysStrings[STRING_CANTHOLDMORE], entity->def->name); //STRING_CANTHOLDMORE
+                        Hud_finishMessageBuffer(hud);
                         return;
                     }
                     Player_updateDamageFaceTime(player);
+
+                    if (entity->def->eSubType != 25 && entity->def->eSubType != 26) {
+                        sound = 5062;
+                    }
+                    Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, entity->doomRpg->sysStrings[STRING_GOT], entity->def->name);
+                    Hud_finishMessageBuffer(hud);
+                    Game_remove(entity->doomRpg->game, entity);
                     break;
                 }
 
-                case 21: {
-                    if (CombatEntity_getArmor(&player->ce) >= CombatEntity_getMaxArmor(&player->ce)) {
-                        Hud_addMessage(hud, "Armor at maximum");
+                case 6:
+                case 16: {
+                    if (!Player_addAmmo(player, entity->def->eSubType, entity->def->parm)) {
+                        Hud_addMessage(hud, entity->doomRpg->sysStrings[STRING_ARMORATMAX]);
                         return;
                     }
-                    Player_addArmor(player, entity->def->parm);
-                    break;
-                }
-
-                case 20: {
-                    if (CombatEntity_getHealth(&player->ce) >= CombatEntity_getMaxHealth(&player->ce)) {
-                        Hud_addMessage(hud, "Health at maximum");
-                        return;
-                    }
-                    Player_addHealth(player, entity->def->parm);
-                    break;
-                }
-
-                case 24: {
-                    player->keys |= 1 << entity->def->parm;
                     Player_updateDamageFaceTime(player);
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, entity->doomRpg->sysStrings[STRING_GOT], entity->def->name);
+                    Hud_finishMessageBuffer(hud);
+
+                    Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+                    Game_remove(entity->doomRpg->game, entity);
+                    break;
+                }
+
+                case 5: {
+                    z = (player->weapons & (1 << entity->def->eSubType)) == 0 && (player->disabledWeapons & (1 << entity->def->eSubType)) == 0;
+
+                    if ((player->weapons & (1 << entity->def->eSubType)) == 0) {
+                        Player_selectWeapon(player, entity->def->eSubType);
+                    }
+
+                    Player_updateDamageFaceTime(player);
+                    player->weapons |= 1 << entity->def->eSubType;
+
+                    wpn = &entity->doomRpg->combat->weaponInfo[entity->def->eSubType];
+                    if (wpn->ammoUsage != 0) {
+                        Player_addAmmo(player, wpn->ammoType, entity->def->parm);
+                    }
+
+                    //Sound.playSound(1);
+                    hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
+                    msg = Hud_getMessageBuffer(hud);
+                    SDL_snprintf(msg, MS_PER_CHAR, entity->doomRpg->sysStrings[STRING_GOT], entity->def->name);
+                    Hud_finishMessageBuffer(hud);
+                    Game_remove(entity->doomRpg->game, entity);
+
+                    if (z) {
+                        entity->doomRpg->game->tileEvent = 0;
+
+                        if (entity->def->eSubType == 0) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GOTAXE], false); //STRING_GOTAXE
+                            sound = 5060;
+                        }
+                        else if (entity->def->eSubType == 1) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GOTFIRE], false); //STRING_GOTFIRE
+                            sound = 5060;
+                        }
+                        else if (entity->def->eSubType == 3) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GOTSHOT], false); //STRING_GOTSHOT
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 4) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GETCHAIN], false); //STRING_GETCHAIN
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 5) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GETSUPSHOT], false); //STRING_GETSUPSHOT
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 7) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GOTROCKET], false); //STRING_GOTROCKET
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 6) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GOTPLASMA], false); //STRING_GOTPLASMA
+                            sound = 5057;
+                        }
+                        else if (entity->def->eSubType == 8) {
+                            DoomCanvas_startDialog(entity->doomRpg->doomCanvas, entity->doomRpg->sysStrings[STRING_GOTBFG], false); //STRING_GOTBFG
+                            sound = 5057;
+                        }
+
+                        Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+                    }
+                    else { // New lines code
+
+                        sound = 5057;
+                        if ((entity->def->eSubType == 0) || entity->def->eSubType == 1) {
+                            sound = 5060;
+                        }
+
+                        Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
+                    }
+                    break;
+                }
+
+                case 10: {
+                    Player_painEvent(player, NULL);
+                    Player_pain(player, 1, 2);
+                    Hud_addMessage(hud, entity->doomRpg->sysStrings[STRING_BURNS]); //STRING_BURNS
+                    break;
+                }
+
+                case 11: {
+                    Player_painEvent(player, NULL);
+                    Player_pain(player, 10, 10);
+                    Hud_addMessage(hud, entity->doomRpg->sysStrings[STRING_REALBURNS]); //STRING_REALBURNS
                     break;
                 }
             }
 
-            Sound_playSound(entity->doomRpg->sound, sound, 0, 2);
-            hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
-
-            msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
-            Hud_finishMessageBuffer(hud);
-            Game_remove(entity->doomRpg->game, entity);
-            break;
-        }
-
-        case 4: {
-            if (!Player_addItem(player, entity->def->eSubType, 1)) {
-                msg = Hud_getMessageBuffer(hud);
-                SDL_snprintf(msg, MS_PER_CHAR, "Can't hold more %ss", entity->def->name);
-                Hud_finishMessageBuffer(hud);
-                return;
-            }
-            Player_updateDamageFaceTime(player);
-
-            if (entity->def->eSubType != 25 && entity->def->eSubType != 26) {
-                sound = 5062;
-            }
-            Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
-
-            hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
-            msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
-            Hud_finishMessageBuffer(hud);
-            Game_remove(entity->doomRpg->game, entity);
-            break;
-        }
-
-        case 6:
-        case 16: {
-            if (!Player_addAmmo(player, entity->def->eSubType, entity->def->parm)) {
-                Hud_addMessage(hud, "Ammo at maximum");
-                return;
-            }
-            Player_updateDamageFaceTime(player);
-            hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
-            msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
-            Hud_finishMessageBuffer(hud);
-
-            Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
-            Game_remove(entity->doomRpg->game, entity);
-            break;
-        }
-
-        case 5: {
-            z = (player->weapons & (1 << entity->def->eSubType)) == 0 && (player->disabledWeapons & (1 << entity->def->eSubType)) == 0;
-
-            if ((player->weapons & (1 << entity->def->eSubType)) == 0) {
-                Player_selectWeapon(player, entity->def->eSubType);
-            }
-
-            Player_updateDamageFaceTime(player);
-            player->weapons |= 1 << entity->def->eSubType;
-
-            wpn = &entity->doomRpg->combat->weaponInfo[entity->def->eSubType];
-            if (wpn->ammoUsage != 0) {
-                Player_addAmmo(player, wpn->ammoType, entity->def->parm);
-            }
-
-            //Sound.playSound(1);
-            hud->gotFaceTime = entity->doomRpg->doomCanvas->time + 500;
-            msg = Hud_getMessageBuffer(hud);
-            SDL_snprintf(msg, MS_PER_CHAR, "Got %s", entity->def->name);
-            Hud_finishMessageBuffer(hud);
-            Game_remove(entity->doomRpg->game, entity);
-
-            if (z) {
-                entity->doomRpg->game->tileEvent = 0;
-
-                if (entity->def->eSubType == 0) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Axe!|Zombies beware...", false);
-                    sound = 5060;
-                }
-                else if (entity->def->eSubType == 1) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Fire|Extinguisher! It|uses halon can-|isters to put out|fires.", false);
-                    sound = 5060;
-                }
-                else if (entity->def->eSubType == 3) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Shotgun!", false);
-                    sound = 5057;
-                }
-                else if (entity->def->eSubType == 4) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Chaingun! Precise|and deadly, but|it's an ammo hog.", false);
-                    sound = 5057;
-                }
-                else if (entity->def->eSubType == 5) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the Super|Shotgun! Fierce!", false);
-                    sound = 5057;
-                }
-                else if (entity->def->eSubType == 7) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Rocket Launcher!|w00t!", false);
-                    sound = 5057;
-                }
-                else if (entity->def->eSubType == 6) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the|Plasma Gun!", false);
-                    sound = 5057;
-                }
-                else if (entity->def->eSubType == 8) {
-                    DoomCanvas_startDialog(entity->doomRpg->doomCanvas, "You got the BFG!|We could tell you|what BFG stands|for, but this is|a family game.", false);
-                    sound = 5057;
-                }
-
-                Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
-            }
-            else { // New lines code
-
-                sound = 5057;
-                if ((entity->def->eSubType == 0) || entity->def->eSubType == 1) {
-                    sound = 5060;
-                }
-
-                Sound_playSound(entity->doomRpg->sound, sound, 0, 3);
-            }
-            break;
-        }
-
-        case 10: {
-            Player_painEvent(player, NULL);
-            Player_pain(player, 1, 2);
-            Hud_addMessage(hud, "It burns!");
-            break;
-        }
-
-        case 11: {
-            Player_painEvent(player, NULL);
-            Player_pain(player, 10, 10);
-            Hud_addMessage(hud, "It really burns!!");
-            break;
-        }
-    }
 }
 
 void Entity_trimCorpsePile(Entity_t* entity, int x, int y)

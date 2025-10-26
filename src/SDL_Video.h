@@ -16,9 +16,8 @@ typedef struct SDLVideo_s
 	boolean displaySoftKeys;
 	int resolutionIndex;
 } SDLVideo_t;
-
 extern SDLVideo_t sdlVideo;
-
+void SDL_InitAudio(void);
 void SDL_InitVideo(void);
 void SDL_Close(void);
 SDLVideo_t* SDL_GetVideo(void);

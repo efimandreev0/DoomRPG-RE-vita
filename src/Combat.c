@@ -30,18 +30,18 @@ static byte monsterWpInfo[28] = {
 	1, 50,
 	3, 25 };
 
-static byte wpinfo[72] = { 
-	1, 30, 20, 25, 20, 0, 
-	1, 50, 0, 15, 0, 0, 
-	1, 35, 0, 15, 0, 0, 
-	1, 35, 0, 12, 0, 0, 
-	3, 15, 0, 15, 0, 0, 
-	1, 40, 0, 15, 0, 0, 
-	3, 10, 0, 15, 0, 0, 
-	1, 50, 0, 15, 0, 0, 
-	1, 50, 0, 13, 0, 5, 
-	1, 40, 20, 15, 20, 8, 
-	1, 40, 20, 15, 20, 8, 
+static byte wpinfo[72] = {
+	1, 30, 20, 25, 20, 0,
+	1, 50, 0, 15, 0, 0,
+	1, 35, 0, 15, 0, 0,
+	1, 35, 0, 12, 0, 0,
+	3, 15, 0, 15, 0, 0,
+	1, 40, 0, 15, 0, 0,
+	3, 10, 0, 15, 0, 0,
+	1, 50, 0, 15, 0, 0,
+	1, 50, 0, 13, 0, 5,
+	1, 40, 20, 15, 20, 8,
+	1, 40, 20, 15, 20, 8,
 	1, 40, 20, 15, 20, 8 };
 
 Combat_t* Combat_init(Combat_t* combat, DoomRPG_t* doomRpg)
@@ -142,7 +142,7 @@ int Combat_calcHit(Combat_t* combat, Entity_t* entity, int i)
 {
 	Player_t* player;
 	int weapon;
-	
+
 	player = combat->doomRpg->player;
 	weapon = player->weapon;
 
@@ -223,9 +223,9 @@ void Combat_drawWeapon(Combat_t* combat, int x, int y)
 
 		scale = (render->screenWidth << FRACBITS) / 0x8000;
 
-		Render_draw2DSprite(render, 
-			240 + player->weapon, 
-			z ? 1 : 0, 
+		Render_draw2DSprite(render,
+			240 + player->weapon,
+			z ? 1 : 0,
 			doomCanvas->SCR_CX + ((((((pX + x) - 32) << 8) * scale) + 0xff00) >> FRACBITS),
 			render->screenHeight - (((((64 - (pY + y)) << 8) * scale) + 0xff00) >> FRACBITS), 0, damageBlend);
 	}
@@ -283,7 +283,7 @@ void Combat_launchProjectile(Combat_t* combat)
 	GameSprite_t* gSprite;
 	DoomCanvas_t* doomCanvas;
 	DoomRPG_t* doomRpg;
-	
+
 	Sprite_t* sprite;
 	byte renderMode;
 	int missileAnim;
@@ -525,7 +525,11 @@ int Combat_monsterSeq(Combat_t* combat)
 			combat->f342d = 0;
 			combat->gotCrit = false;
 			msgBuff = Hud_getMessageBuffer(hud);
-			SDL_snprintf(msgBuff, MS_PER_CHAR, (combat->attackerWeaponId == 18) ? "%s casts raise%c" : "%s attacks%c", combat->curAttacker->def->name, 0x7f);
+
+			SDL_snprintf(msgBuff, MS_PER_CHAR,
+				(combat->attackerWeaponId == 18) ? combat->doomRpg->sysStrings[STRING_CASTSRAISE] :
+				combat->doomRpg->sysStrings[STRING_ATTACKS], combat->curAttacker->def->name, 0x7f); //STRING_CASTSRAISE : STRING_ATTACKS
+
 			Hud_finishMessageBuffer(hud);
 			break;
 		case 1:
@@ -562,7 +566,7 @@ int Combat_monsterSeq(Combat_t* combat)
 
 					if (combat->curTarget == NULL) {
 
-						combat->hitType = CombatEntity_calcHit(combat->doomRpg, 
+						combat->hitType = CombatEntity_calcHit(combat->doomRpg,
 							&combat->curAttacker->monster->ce,
 							combat->weaponInfo + combat->attackerWeaponId,
 							&combat->doomRpg->player->ce, 0);
@@ -572,7 +576,7 @@ int Combat_monsterSeq(Combat_t* combat)
 								combat->gotCrit = true;
 							}
 
-							CombatEntity_calcDamage(combat->doomRpg, 
+							CombatEntity_calcDamage(combat->doomRpg,
 								&combat->curAttacker->monster->ce,
 								combat->weaponInfo + combat->attackerWeaponId, &combat->doomRpg->player->ce,
 								combat->gotCrit ? 512 : 256, 0, &combat->damage, &combat->armorDamage);
@@ -629,7 +633,9 @@ int Combat_monsterSeq(Combat_t* combat)
 
 			if (combat->curTarget == NULL) {
 				if (combat->totalDamage + combat->totalArmorDamage == 0) {
-					Hud_addMessage(hud, "Dodged!");
+
+					Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_DODGED]); //STRING_DODGED
+
 				}
 				else {
 					Player_pain(player, combat->totalDamage, combat->totalArmorDamage);
@@ -646,15 +652,15 @@ int Combat_monsterSeq(Combat_t* combat)
 					combat->curTarget->monster->nextAttacker = NULL;
 					Game_activate(combat->doomRpg->game, combat->curTarget);
 					Game_linkEntity(combat->doomRpg->game, combat->curTarget, combat->curTarget->linkIndex % 32, combat->curTarget->linkIndex / 32);
-					
+
 					msgBuff = Hud_getMessageBuffer(hud);
-					SDL_snprintf(msgBuff, MS_PER_CHAR, "%s is revived!", combat->curTarget->def->name);
+					SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_REVIVED], combat->curTarget->def->name); //STRING_REVIVED
 					Hud_finishMessageBuffer(hud);
 
 					DoomCanvas_checkFacingEntity(doomCanvas);
 				}
 				else {
-					Hud_addMessage(hud, "Raise failed!");
+					Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_RAISEF]); //STRING_RAISEF
 				}
 			}
 			else {
@@ -758,16 +764,17 @@ boolean Combat_playerSeq(Combat_t* combat)
 			if (wpn->ammoUsage) {
 				byte b = player->ammo[wpn->ammoType];
 				if (b < wpn->ammoUsage) {
-					SDL_snprintf(msgBuff, MS_PER_CHAR, "Attacking%c %s", 0x7f, "(Last shot!)");
+					//STRING_ATTACKING
+					SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_ATTACKING], 0x7f, combat->doomRpg->sysStrings[STRING_LASTSHOT]); //STRING_LASTSHOT
 				}
 				else if (b < wpn->ammoUsage * 2) {
-					SDL_snprintf(msgBuff, MS_PER_CHAR, "Attacking%c %s", 0x7f, "(1 shot left!)");
+					SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_ATTACKING], 0x7f, combat->doomRpg->sysStrings[STRING_ONESHOT]); //STRING_ONESHOT
 				}
 				else if (b < wpn->ammoUsage * 3) {
-					SDL_snprintf(msgBuff, MS_PER_CHAR, "Attacking%c %s", 0x7f, "(2 shots left!)");
+					SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_ATTACKING], 0x7f, combat->doomRpg->sysStrings[STRING_TWOSHOTS]); //STRING_TWOSHOTS
 				}
 				else if (b < wpn->ammoUsage * 4) {
-					SDL_snprintf(msgBuff, MS_PER_CHAR, "Attacking%c %s", 0x7f, "(3 shots left!)");
+					SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_ATTACKING], 0x7f, combat->doomRpg->sysStrings[STRING_THREESHOTS]); //STRING_THREESHOTS
 				}
 			}
 			Hud_finishMessageBuffer(hud);
@@ -785,16 +792,16 @@ boolean Combat_playerSeq(Combat_t* combat)
 		else if (wpn->ammoUsage) {
 			byte b = player->ammo[wpn->ammoType];
 			if (b < wpn->ammoUsage) {
-				Hud_addMessage(hud, "Last shot!");
+				Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_LASTSHOT]);
 			}
 			else if (b < wpn->ammoUsage * 2) {
-				Hud_addMessage(hud, "1 shot left!");
+				Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_ONESHOT]);
 			}
 			else if (b < wpn->ammoUsage * 3) {
-				Hud_addMessage(hud, "2 shots left!");
+				Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_TWOSHOTS]);
 			}
 			else if (b < wpn->ammoUsage * 4) {
-				Hud_addMessage(hud, "3 shots left!");
+				Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_THREESHOTS]);
 			}
 		}
 	}
@@ -999,33 +1006,34 @@ boolean Combat_playerSeq(Combat_t* combat)
 			if (combat->totalDamage + combat->totalArmorDamage == 0) {
 				if (combat->curTarget->def->eType == 1 && player->weapon != 1) {
 					if (combat->kronosTeleporter != 0) {
-						Hud_addMessage(hud, "Kronos Teleported!");
+						Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_KRONOSTELEP]); //STRING_KRONOSTELEP
 					}
 					else {
-						Hud_addMessage(hud, "Missed!");
+						Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_MISSED]); //STRING_MISSED
 					}
 				}
 				else {
-					Hud_addMessage(hud, "No effect!");
+					Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_NOEFFECT]); //STRING_NOEFFECT
 				}
 			}
 			else {
 				if (combat->curTarget->def->eType == 1) {
 					msgBuff = Hud_getMessageBuffer(hud);
-					SDL_snprintf(msgBuff, MS_PER_CHAR, "%s%d damage!", combat->gotCrit ? "Crit! " : "", combat->totalDamage + combat->totalArmorDamage);
+					SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_DAMAGE2], combat->gotCrit ? combat->doomRpg->sysStrings[STRING_CRIT] :
+						combat->doomRpg->sysStrings[STRING_EMPTY], combat->totalDamage + combat->totalArmorDamage); //STRING_DAMAGE2
 
 					Entity_pain(combat->curTarget, combat->totalDamage, combat->totalArmorDamage);
 
 					if (CombatEntity_getHealth(&combat->curTarget->monster->ce) <= 0) {
 						msgLen = SDL_strlen(msgBuff);
-						SDL_snprintf(msgBuff + msgLen, MS_PER_CHAR - msgLen, " %s died!", combat->curTarget->def->name);
+						SDL_snprintf(msgBuff + msgLen, MS_PER_CHAR - msgLen, combat->doomRpg->sysStrings[STRING_DIED], combat->curTarget->def->name); //STRING_DIED
 						Hud_finishMessageBuffer(hud);
 						Entity_died(combat->curTarget);
 					}
 					else {
 						Hud_finishMessageBuffer(hud);
 
-						// Pain Sound 
+						// Pain Sound
 						snd = EntityMonster_getSoundRnd(combat->curTarget->monster, 6);
 						if (snd != 0) {
 							Sound_playSound(combat->doomRpg->sound, snd, 0, 2);
@@ -1038,10 +1046,10 @@ boolean Combat_playerSeq(Combat_t* combat)
 						int n3 = ((combat->curTarget->info & 0x400000) != 0x0) ? 1 : 0;
 
 						if (combat->doomRpg->game->powerCouplingHealth[n3] > combat->totalDamage + combat->totalArmorDamage) {
-							SDL_snprintf(msgBuff, MS_PER_CHAR, "Hit %s for %d damage!", combat->curTarget->def->name, combat->totalDamage + combat->totalArmorDamage);
+							SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_HITFORDAM], combat->curTarget->def->name, combat->totalDamage + combat->totalArmorDamage); //STRING_HITFORDAM
 						}
 						else {
-							SDL_snprintf(msgBuff, MS_PER_CHAR, "%s destroyed!", combat->curTarget->def->name);
+							SDL_snprintf(msgBuff, MS_PER_CHAR, combat->doomRpg->sysStrings[STRING_DESTROYED], combat->curTarget->def->name); //STRING_DESTROYED
 						}
 
 						Hud_finishMessageBuffer(hud);
@@ -1056,10 +1064,10 @@ boolean Combat_playerSeq(Combat_t* combat)
 					}
 				}
 				else if (combat->attackerWeaponId == 1) {
-					Hud_addMessage(hud, "No effect!");
+					Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_NOEFFECT]);
 				}
 				else {
-					Hud_addMessage(hud, "Missed!");
+					Hud_addMessage(hud, combat->doomRpg->sysStrings[STRING_MISSED]);
 				}
 
 				if (combat->hitType != 0 && (combat->curTarget->info & 0x200000) == 0x0) {

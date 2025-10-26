@@ -365,12 +365,12 @@ void Game_hurtEntityAt(Game_t* game, int i, int i2, int i3, int i4, int z, int z
 				Entity_pain(entity, i3, i4);
 
 				if (CombatEntity_getHealth(&entity->monster->ce) <= 0) {
-					SDL_snprintf(text, sizeof(text), "%s took %d damage! %s died!", entity->def->name, (i3 + i4), entity->def->name);
+					SDL_snprintf(text, sizeof(text), game->doomRpg->sysStrings[STRING_TOOKDAMAGEDIED], entity->def->name, (i3 + i4), entity->def->name); //STRING_TOOKDAMAGE
 					Hud_addMessage(game->doomRpg->hud, text);
 					Entity_died(entity);
 					return;
 				}
-				SDL_snprintf(text, sizeof(text), "%s took %d damage!", entity->def->name, (i3 + i4));
+				SDL_snprintf(text, sizeof(text), game->doomRpg->sysStrings[STRING_TOOKDAMAGE], entity->def->name, (i3 + i4));
 				Hud_addMessage(game->doomRpg->hud, text);
 
 				// Pain Sound
@@ -624,16 +624,16 @@ boolean Game_checkConfigVersion(Game_t* game)
 	worldFile = NULL;
 
 	rnt = false;
-	configFile = SDL_RWFromFile(DATAPATH "Config", "r");
+	configFile = SDL_RWFromFile(DATAPATH "saves/Config", "r");
 	if (configFile) {
-		playerFile = SDL_RWFromFile(DATAPATH "Player", "r");
+		playerFile = SDL_RWFromFile(DATAPATH "saves/Player", "r");
 		if (playerFile) {
-			player2File = SDL_RWFromFile(DATAPATH "Player2", "r");
+			player2File = SDL_RWFromFile(DATAPATH "saves/Player2", "r");
 			if (player2File) {
-				worldFile = SDL_RWFromFile(DATAPATH "World", "r");
+				worldFile = SDL_RWFromFile(DATAPATH "saves/World", "r");
 				if (worldFile) {
 
-					rw = SDL_RWFromFile(DATAPATH "Config", "r");
+					rw = SDL_RWFromFile(DATAPATH "saves/Config", "r");
 					SDL_RWread(rw, &version, sizeof(int), 1);
 					if (version == CONFIG_VERSION) {
 						rnt = true;
@@ -700,7 +700,7 @@ void Game_loadConfig(Game_t* game)
 	
 	printf("loadConfig\n");
 
-	rw = SDL_RWFromFile(DATAPATH "Config", "r");
+	rw = SDL_RWFromFile(DATAPATH "saves/Config", "r");
 	if (rw) {
 		SDL_RWread(rw, &version, sizeof(int), 1);
 		if (version == CONFIG_VERSION) {
@@ -1069,7 +1069,7 @@ void Game_loadState(Game_t* game, int i)
 	doomCanvas = game->doomRpg->doomCanvas;
 
 	//printf("load %s\event", (codeId == 1) ? "Player2" : "Player");
-	Game_loadPlayerState(game, (i == 1) ? DATAPATH "Player2" : DATAPATH "Player");
+	Game_loadPlayerState(game, (i == 1) ? DATAPATH "saves/Player2" : DATAPATH "saves/Player");
 
 	game->activeLoadType = i;
 	game->doomRpg->player->nextLevelXP = Player_calcLevelXP(game->doomRpg->player, game->doomRpg->player->level);
@@ -1105,7 +1105,7 @@ void Game_loadWorldState(Game_t* game)
 
 	//printf("loadWorldState\event");
 
-	rw = SDL_RWFromFile(DATAPATH "World", "rb");
+	rw = SDL_RWFromFile(DATAPATH "saves/World", "rb");
 	if (rw)
 	{
 		// Map Entities
@@ -1361,10 +1361,10 @@ boolean Game_performDoorEvent(Game_t* game, int codeId, int arg1, int flags)
 void Game_deleteSaveFiles(Game_t* game)
 {
 	printf("Removing saved state...\n");
-	remove("Config");
-	remove("Player");
-	remove("Player2");
-	remove("World");
+	remove(DATAPATH "saves/Config");
+	remove(DATAPATH "saves/Player");
+	remove(DATAPATH "saves/Player2");
+	remove(DATAPATH "saves/World");
 }
 
 void Game_remove(Game_t* game, Entity_t* entity)
@@ -1465,7 +1465,7 @@ boolean Game_executeEvent(Game_t* game, int event, int codeId, int arg1, int arg
 
 		// 5 Pain(int damage)
 		case EV_PAIN: { // EV_PAIN
-			Hud_addMessage(game->doomRpg->hud, "Pain!");
+			//Hud_addMessage(game->doomRpg->hud, "Pain!");
 			Player_painEvent(game->doomRpg->player, NULL);
 			Player_pain(game->doomRpg->player, arg1, 0);
 			break;
@@ -1743,7 +1743,7 @@ boolean Game_executeEvent(Game_t* game, int event, int codeId, int arg1, int arg
 		case EV_CHECK_COMPLETED_LEVEL: { // EV_CHECK_COMPLETED_LEVEL
 			int n27;
 			for (n27 = ((arg1 & -65536) >> 16) - 1; n27 < MAP_ITEMS && (game->doomRpg->player->completedLevels & 1 << n27) == 0x0; ++n27) {}
-			
+
 			if (n27 == MAP_ITEMS) {
 				DoomCanvas_startDialog(doomCanvas, game->doomRpg->render->mapStringsIDs[arg1 & 65535], false);
 				game->saveTileEvent = true;
@@ -1763,19 +1763,17 @@ boolean Game_executeEvent(Game_t* game, int event, int codeId, int arg1, int arg
 
 		case EV_CHECK_KEY: { // EV_CHECK_KEY
 			if (arg1 == 0 && (game->doomRpg->player->keys & 0x1) == 0x0) {
-				Hud_addMessage(game->doomRpg->hud, "Need Green Key");
 			}
 			else if (arg1 == 1 && (game->doomRpg->player->keys & 0x2) == 0x0) {
-				Hud_addMessage(game->doomRpg->hud, "Need Yellow Key");
+
 			}
 			else if (arg1 == 2 && (game->doomRpg->player->keys & 0x4) == 0x0) {
-				Hud_addMessage(game->doomRpg->hud, "Need Blue Key");
+
 			}
 			else {
 				if (arg1 != 3 || (game->doomRpg->player->keys & 0x8) != 0x0) {
 					return false;
 				}
-				Hud_addMessage(game->doomRpg->hud, "Need Red Key");
 			}
 
 			Sound_playSound(game->doomRpg->sound, 5065, 0, 2);
@@ -1916,7 +1914,7 @@ void Game_saveConfig(Game_t* game, int num)
 	int version;
 	//printf("saveConfig %d\event", num);
 
-	rw = SDL_RWFromFile(DATAPATH "Config", "w");
+	rw = SDL_RWFromFile(DATAPATH "saves/Config", "w");
 
 	version = CONFIG_VERSION;
 	SDL_RWwrite(rw, &version, sizeof(int), 1);
@@ -2009,25 +2007,25 @@ void Game_saveState(Game_t* game, int mapId, int x, int y, int angleDir, boolean
 		DoomRPG_setColor(game->doomRpg, 0xff000000);
 		DoomRPG_fillRect(game->doomRpg, 0, 0, game->doomRpg->doomCanvas->displayRect.w, game->doomRpg->doomCanvas->displayRect.h);
 		DoomRPG_setColor(game->doomRpg, 0xffffffff);
-		DoomCanvas_drawString1(game->doomRpg->doomCanvas, "Saving...", game->doomRpg->doomCanvas->SCR_CX, game->doomRpg->doomCanvas->SCR_CY - 24, 17);
+		//DoomCanvas_drawString1(game->doomRpg->doomCanvas, "Saving...", game->doomRpg->doomCanvas->SCR_CX, game->doomRpg->doomCanvas->SCR_CY - 24, 17);
 		DoomRPG_flushGraphics(game->doomRpg);
 	}
 
 	DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
 	Game_saveConfig(game, z);
 	DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
-	Game_savePlayerState(game, DATAPATH "Player2", game->mapFiles[mapId-1], x, y, angleDir);
+	Game_savePlayerState(game, DATAPATH "saves/Player2", game->mapFiles[mapId-1], x, y, angleDir);
 	DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
 	Game_saveWorldState(game);
 	if (!z) {
 		if (game->newMapName && SDL_strcmp(game->newMapName, "")) {
 			DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
-			Game_savePlayerState(game, DATAPATH "Player", game->newMapName, game->newDestX, game->newDestY, game->newAngle);
+			Game_savePlayerState(game, DATAPATH "saves/Player", game->newMapName, game->newDestX, game->newDestY, game->newAngle);
 			game->newMapName[0] = '\0';
 		}
 		else {
 			DoomCanvas_updateLoadingBar(game->doomRpg->doomCanvas);
-			Game_savePlayerState(game, DATAPATH "Player", "/junction.bsp", 0, 0, 0);
+			Game_savePlayerState(game, DATAPATH "saves/Player", "/junction.bsp", 0, 0, 0);
 		}
 	}
 }
@@ -2041,7 +2039,7 @@ void Game_saveWorldState(Game_t* game)
 	GameSprite_t* gSprite;
 	int i, j;
 
-	rw = SDL_RWFromFile(DATAPATH "World", "wb");
+	rw = SDL_RWFromFile(DATAPATH "saves/World", "wb");
 
 	// Map Entities
 	File_writeInt(rw, game->numEntities);
@@ -2337,8 +2335,8 @@ void Game_updateSpawnPortals(Game_t* game)
 			Game_linkEntity(game, game->spawnMonster, a >> 6, 15);
 			Game_gsprite_allocAnim(game, 2, a, 992);
 			DoomCanvas_updateViewTrue(game->doomRpg->doomCanvas);
-			SDL_snprintf(text, sizeof(text), "Portal spawns %s!", game->spawnMonster->def->name);
-			Hud_addMessage(game->doomRpg->hud, text);
+			//SDL_snprintf(text, sizeof(text), "Portal spawns %s!", game->spawnMonster->def->name);
+			//Hud_addMessage(game->doomRpg->hud, text);
 		}
 		game->spawnCount = 1 + (DoomRPG_randNextInt(&game->doomRpg->random) & 3);
 	}

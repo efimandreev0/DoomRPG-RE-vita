@@ -22,17 +22,53 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -fno-short-enums")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 file(GLOB_RECURSE HEADER_FILES
-  "src/*.hpp"
-  "src/*.h"
+        "src/*.hpp"
+        "src/*.h"
 )
 file(GLOB_RECURSE SOURCE_FILES
-  "src/*.cpp"
-  "src/*.c"
+        "src/*.cpp"
+        "src/*.c"
 )
 
 add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
+
 target_link_libraries(${PROJECT_NAME}
+        SDL2
+        SDL2_mixer
+        SDL2_ttf
+        SDL2_image
+        SDL2_gfx
+        xmp
+        mpg123
+        modplug
+        opusfile
+        opus
+        mikmod
+        FLAC
+        webp
+        pthread
+        vorbisfile
+        vorbis
+        ogg
+        jpeg
+        png
+        freetype
+        vita2d
+        m
+
   SDL2::SDL2
+  vitaGL
+  vitashark
+  SceShaccCg_stub
+  SceShaccCgExt
+  taihen_stub
+  SceGxm_stub
+  SceDisplay_stub
+  SceCtrl_stub
+  SceAudio_stub
+  SceCommonDialog_stub
+  m
+  c
   ZLIB::ZLIB
   fluidsynth
   soloud
@@ -41,8 +77,8 @@ target_link_libraries(${PROJECT_NAME}
 
 vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})
 vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
-  VERSION ${VITA_VERSION}
-  NAME ${VITA_APP_NAME}
-  FILE sce_sys sce_sys
-  FILE gm.sf2 gm.sf2
+        VERSION ${VITA_VERSION}
+        NAME ${VITA_APP_NAME}
+        FILE sce_sys sce_sys
+        FILE gm.sf2 gm.sf2
 )

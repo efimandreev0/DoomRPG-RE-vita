@@ -56,6 +56,26 @@ EntityDef_t* EntityDef_lookup(EntityDefManager_t* entDef, int i)
 	return NULL;
 }
 
+void readEntityNames(EntityDefManager_t *entityDef, const char *txtName)
+{
+    FILE *fp = fopen(txtName, "r");
+    if (!fp) {
+        return;
+    }
+
+    char line[128];
+    size_t i = 0;
+    while (i < entityDef->numDefs && fgets(line, sizeof(line), fp)) {
+        line[strcspn(line, "\n")] = '\0';
+
+        strncpy(entityDef->list[i].name, line, sizeof(entityDef->list[i].name) - 1);
+        entityDef->list[i].name[sizeof(entityDef->list[i].name) - 1] = '\0';
+
+        i++;
+    }
+
+    fclose(fp);
+}
 int EntityDef_startup(EntityDefManager_t* entityDef)
 {
 	byte *fData;
@@ -63,7 +83,6 @@ int EntityDef_startup(EntityDefManager_t* entityDef)
 	int dataPos, i;
 
 	fData = DoomRPG_fileOpenRead(entityDef->doomRpg, "/entities.db");
-
 	dataPos = 0;
 	entityDef->numDefs = DoomRPG_shortAtNext(fData, &dataPos);
 
@@ -72,7 +91,7 @@ int EntityDef_startup(EntityDefManager_t* entityDef)
 		DoomRPG_Error("EntityDef_startup: Insufficient memory for allocation");
 		return 0;
 	}
-	
+
 	for(i = 0; i < entityDef->numDefs; i++)
 	{
 		list = &entityDef->list[i];
@@ -84,6 +103,15 @@ int EntityDef_startup(EntityDefManager_t* entityDef)
 		dataPos += sizeof(list->name);
 	}
 
+	const char* base_path = "ux0:data/DoomRPG/";
+	char full_path[128];
+	snprintf(full_path, sizeof(full_path), "%s%s/%s", base_path, entityDef->doomRpg->lang, "entities.txt");
+	if (!file_exists(full_path)) {
+		snprintf(full_path, sizeof(full_path), "%s%s", base_path, "en/entities.txt");
+	}
+	if (file_exists(full_path)) {
+		readEntityNames(entityDef, full_path);
+	}
 	SDL_free(fData);
 
 	/*for (i = 0; i < entityDef->numDefs; i++)
