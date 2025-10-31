@@ -1084,11 +1084,11 @@ void DoomCanvas_drawEpilogue(DoomCanvas_t* doomCanvas)
 
 		if (doomCanvas->epilogueTextPage < 1) {
 			DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, doomCanvas->SCR_CY + 64, 10);
-			DoomCanvas_drawString1(doomCanvas, "More", (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
+			DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_MORE], (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
 		}
 		else {
 			DoomCanvas_drawImage(doomCanvas, &doomCanvas->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, doomCanvas->SCR_CY + 64, 10);
-			DoomCanvas_drawString1(doomCanvas, "Continue", (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
+			DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_CONTINUE], (doomCanvas->SCR_CX + 64) - 4, doomCanvas->SCR_CY + 64, 10);
 		}
 
 		if ((doomCanvas->time - doomCanvas->epilogueTextTime) > (((int) SDL_strlen(doomCanvas->epilogueText[doomCanvas->epilogueTextPage]) * 25))) {
@@ -1153,11 +1153,11 @@ void DoomCanvas_drawStory(DoomCanvas_t* doomCanvas)
 
 			if (doomCanvas->storyTextPage < iVar1 - 1) {
 				DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 36) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
-				DoomCanvas_drawString1(doomCanvas, "More", (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
+				DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_MORE], (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
 			}
 			else {
 				DoomCanvas_drawImage(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgHand, (doomCanvas->SCR_CX + 8) - 4, (doomCanvas->SCR_CY + 64) - 2, 10);
-				DoomCanvas_drawString1(doomCanvas, "Continue", (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
+				DoomCanvas_drawString1(doomCanvas, doomCanvas->doomRpg->sysStrings[STRING_CONTINUE], (doomCanvas->SCR_CX + 64) - 4, (doomCanvas->SCR_CY + 64), 10);
 			}
 
 			if (i2 > ((int)SDL_strlen(text[doomCanvas->storyTextPage]) * 25)) {

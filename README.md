@@ -51,6 +51,7 @@ This port uses SDL2, ZLIB, SoLoud and fluidsynth-lite
 1. Install [fluidsynth-lite](https://github.com/vitasdk/packages/tree/master/fluidsynth-lite) using `vdpm`. Please refer to "Porting libraries" section on Vita SDK's website for further instructions
 1. Run `build.sh` for a debug build, or add `-r` flag for a release build
 
+Note: You must have VERY OLD vitaGL and SDL2. Without that your game don't start, and been crashing. I used "vdpm SDL2" and "vdpm vitagl".
 ## Bug reporting
 
 If you find a bug, please send me an e-mail to dobes.jakub@gmail.com or open an issue here on github.
